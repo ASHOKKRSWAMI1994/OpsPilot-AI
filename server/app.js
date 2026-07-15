@@ -3,6 +3,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const authRoutes = require("./routes/auth.routes");
+const employeeRoutes = require("./routes/employee.routes");
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(morgan("dev"));
 
 //Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/employees", employeeRoutes);
 
 // Health Check Route
 app.get("/", (req, res) => {
