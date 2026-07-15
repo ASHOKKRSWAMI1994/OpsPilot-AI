@@ -48,6 +48,7 @@ const addEmployee = async (req, res) => {
       status,
       address,
       emergencyContact,
+      createdBy: req.user._id,
     });
 
     res.status(201).json({
@@ -69,14 +70,42 @@ const addEmployee = async (req, res) => {
 
 const getEmployees = async (req, res) => {
   try {
-    const employees = await Employee.find().sort({ createdAt: -1 });
+    const { search, department, page = 1, limit = 10 } = req.query;
+
+    const query = {};
+
+    // Search by Name, Email or Employee ID
+    if (search) {
+      query.$or = [
+        { fullName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { employeeId: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // Department Filter
+    if (department) {
+      query.department = department;
+    }
+
+    const skip = (page - 1) * limit;
+
+    const employees = await Employee.find(query)
+  .select("-__v")
+  .populate("createdBy", "fullName email")
+  .sort({ createdAt: -1 })
+  .skip(skip)
+  .limit(Number(limit));
+
+    const totalEmployees = await Employee.countDocuments(query);
 
     res.status(200).json({
       success: true,
-      count: employees.length,
+      totalEmployees,
+      currentPage: Number(page),
+      totalPages: Math.ceil(totalEmployees / limit),
       data: employees,
     });
-
   } catch (error) {
     res.status(500).json({
       success: false,
